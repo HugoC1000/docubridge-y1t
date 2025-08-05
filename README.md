@@ -53,20 +53,54 @@ docubridge-y1t/
 
 > Prerequisites: Python 3.12+, Git installed, and a GitHub account.
 
-## 1. Clone the repository
-**In BASH terminal**
-
+### 1. Clone the repository
+**In BASH terminal:**
+```bash
 git clone https://github.com/HugoC1000/docubridge-y1t.git
 cd docubridge-y1t
+```
+
+### 2. Create and activate a virtual environment
+```bash
+python -m venv venv
+# On Windows:
+venv\Scripts\activate
+# On macOS/Linux:
+source venv/bin/activate
+```
+
+### 3. Install dependencies
+```bash
+pip install -r requirements.txt
+```
+
+### 4. Set up environment variables (if needed)
+- Copy `config.example.py` to `config.py` and add your API keys or configuration details as instructed in the file.
+
+### 5. Run the application
+```bash
+python app.py
+```
+- Open your browser and go to `http://localhost:5000`
 
 ---
 
-## Contributors (Order TBD)
+If you encounter issues, ensure your Python version is correct and all dependencies are installed.
+
+---
+
+## Contributors
+*Members of the HUVTSP 2025 Cohort, listed in alphabetical order by last name. All listed were assigned to the project. Actual contributions may vary.*
 
 - [Hugo Chung](https://github.com/HugoC1000)
 - [Maruthi Kavuri](#)
-- [Naaisha Mahajan](#)
-- [Emily Lopez](#)
-- [Pratyay Rao](#)
+- [Naaisha Mahajan](https://github.com/baaisha)
+- [Emily Lopez](https://github.com/ThisIsEmily13)
+- [Pratyay Rao](https://github.com/PratyayVRao)
 - [Anshul Shah](https://github.com/ashah28-create)
-- [Wing Yan Tan](#)
+- [Wing Yan Tan](https://github.com/Venus-tan)
+
+---
+
+## Support
+For questions or feedback, please open an issue on GitHub or contact one of the contributors.
