@@ -19,8 +19,13 @@ genai.configure(api_key=api_key)
 model = genai.GenerativeModel("gemini-1.5-flash")
 
 @app.route('/')
-def index():
+def home():
     return render_template('index.html')
+
+@app.route('/chat')
+def chat():
+    prefill = request.args.get('q', default='', type=str)
+    return render_template('chat.html', prefill=prefill)
 
 def allowed_filetype(filename):
     return filename.lower().endswith('.xls') or filename.lower().endswith('.xlsx')
@@ -121,19 +126,27 @@ def uploadForm():
         session['analysis_context'] = analysis_context
         session['filename'] = secure_filename(file.filename)
 
+        # Debug: log what we're passing (length + small preview)
+        try:
+            print(f"csv_data length: {len(csv_data)} chars | rows: {len(df)} cols: {len(df.columns)}")
+            print("csv_data preview:", repr(csv_data[:200]))
+        except Exception as _e:
+            pass
+
 
         prompt = f"""You are a financial analysis AI assistant specialized in Excel/spreadsheet data analysis.
 
 SPREADSHEET ANALYSIS:
 {analysis_context}
 
-DATA SAMPLE:
+FULL DATA (CSV — entire dataset):
 {csv_data}
 
 USER QUESTION:
 {question}
 
 INSTRUCTIONS:
+- The CSV block above contains the ENTIRE dataset (not just a sample). Do not claim the upload is incomplete unless the referenced columns are truly missing from the CSV.
 - Base your answer strictly on the provided data
 - For financial calculations, show your work step by step
 - If you detect any data quality issues, mention them
@@ -174,18 +187,26 @@ def followUpQuestion():
     analysis_context = session.get('analysis_context', 'No analysis context available.')
     filename = session.get('filename', 'uploaded file')
 
+    # Debug: log what we're passing (length + small preview)
+    try:
+        print(f"[follow-up] csv_data length: {len(csv_data)} chars")
+        print("[follow-up] csv_data preview:", repr(csv_data[:200]))
+    except Exception as _e:
+        pass
+
     prompt = f"""You are a financial analysis AI assistant continuing analysis of the spreadsheet "{filename}".
 
 PREVIOUS ANALYSIS CONTEXT:
 {analysis_context}
 
-DATA SAMPLE:
+FULL DATA (CSV — entire dataset):
 {csv_data}
 
 FOLLOW-UP QUESTION:
 {question}
 
 INSTRUCTIONS:
+- The CSV block above contains the ENTIRE dataset (not just a sample). Do not claim the upload is incomplete unless the referenced columns are truly missing from the CSV.
 - This is a follow-up question about the same dataset
 - Reference previous context and maintain consistency
 - Base your answer strictly on the provided data

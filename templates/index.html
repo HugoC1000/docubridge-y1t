@@ -10,37 +10,99 @@
 </head>
 
 <body>
-  <div class="container my-5">
-    <div class="text-center mb-4">
-      <h1 class="fw-bold" style="font-size: 2.5rem;">ModelMind: DocuBridge's AI Financial Modeling Assistant</h1>
-      <p class="lead text-muted">Smarter financial analysis with AI</p>
-      <p class="text-muted">
-        ModelMind streamlines financial modeling by helping you extract insights instantly.<br>
-        Just upload your spreadsheet and start asking questions — it’s that simple.
-      </p>
-    </div>
-
-    <div class="card shadow-sm mx-auto" style="max-width: 700px;">
-      <div class="card-body">
-        <form method="POST" action="/upload" enctype="multipart/form-data">
-          <div class="mb-3">
-            <label for="excel_file" class="form-label">Upload Financial Model</label>
-            <input class="form-control" type="file" name="excel_file" id="excel_file" accept=".xls,.xlsx" required>
-            <div class="form-text">Only Excel files (.xls, .xlsx)</div>
-          </div>
-          <div class="mb-3">
-            <label for="user_question" class="form-label">Your Question</label>
-            <input class="form-control" type="text" name="user_question" id="user_question" placeholder="Ask a question about your spreadsheet" required>
-          </div>
-          <button type="submit" class="btn btn-primary w-100">Analyze Spreadsheet</button>
-        </form>
-
-        <!-- Follow-up question form inserted by app.js -->
+  <div class="container my-5" style="max-width: 900px;">
+    <div class="landing-hero text-center" style="min-height: 100vh;">
+      <h1 class="fw-bold" style="font-size: 2.2rem;">ModelMind: DocuBridge's AI Financial Modeling Assistant</h1>
+      <p class="lead text-muted">What are you working on?</p>
+      <div class="d-flex flex-column align-items-center gap-1">
+        <input id="home-query" type="text" class="hero-input" placeholder="Ask anything" autocomplete="off" />
+        <input id="home-excel" type="file" accept=".xls,.xlsx" hidden>
+        <div class="d-flex align-items-center gap-2">
+          <button id="home-attach" class="btn btn-light border" type="button">Attach Excel</button>
+          <div id="home-file-chip" class="file-chip d-none"></div>
+        </div>
+        <button id="home-submit" class="btn btn-primary mt-3" type="button" disabled>Start</button>
+        <small class="text-muted">Press Enter or click Start. If a file is attached, we’ll analyze it first.</small>
       </div>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+  <script>
+  const homeInput = document.getElementById('home-query');
+  const submitBtn = document.getElementById('home-submit');
+  const attachBtn = document.getElementById('home-attach');
+  const excelInput = document.getElementById('home-excel');
+  const fileChip = document.getElementById('home-file-chip');
+
+    function setChip(file) {
+      if (!file) { fileChip.classList.add('d-none'); fileChip.innerHTML=''; return; }
+      fileChip.classList.remove('d-none');
+      fileChip.innerHTML = `${file.name} <span class="remove" title="Remove">✕</span>`;
+      fileChip.querySelector('.remove').onclick = () => { excelInput.value=''; setChip(null); };
+    }
+
+    function goToChat(q) {
+      const enc = encodeURIComponent(q.trim());
+      if (!q.trim()) return;
+      window.location.href = `/chat?q=${enc}`;
+    }
+
+    function firstUpload(q, file) {
+      const fd = new FormData();
+      fd.append('excel_file', file);
+      fd.append('user_question', q);
+      attachBtn.disabled = true; attachBtn.textContent = 'Uploading...';
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Starting...'; }
+      if (homeInput) homeInput.disabled = true;
+      fetch('/upload', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+          // store for chat page to render first answer
+          sessionStorage.setItem('prefillFirst', JSON.stringify({ q, data }));
+          goToChat(q);
+        })
+        .catch(() => {
+          alert('Error uploading file. Please try again.');
+        })
+        .finally(() => {
+          attachBtn.disabled = false; attachBtn.textContent = 'Attach Excel';
+          if (submitBtn) { submitBtn.textContent = 'Start'; }
+          if (homeInput) homeInput.disabled = false;
+        });
+    }
+
+    function updateSubmitState() {
+      if (!submitBtn || !homeInput) return;
+      submitBtn.disabled = homeInput.value.trim().length === 0;
+    }
+
+    if (attachBtn && excelInput) {
+      attachBtn.addEventListener('click', () => excelInput.click());
+      excelInput.addEventListener('change', () => setChip(excelInput.files[0]));
+    }
+
+    if (homeInput) {
+      homeInput.addEventListener('input', updateSubmitState);
+      homeInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleSubmit();
+        }
+      });
+    }
+
+    function handleSubmit() {
+      const q = homeInput.value.trim();
+      if (!q) return; // require text
+      const file = excelInput.files[0];
+      if (file) firstUpload(q, file); else goToChat(q);
+    }
+
+    if (submitBtn) submitBtn.addEventListener('click', handleSubmit);
+
+    // initialize button state
+    updateSubmitState();
+  </script>
 </body>
 </html>
